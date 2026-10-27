@@ -40,28 +40,10 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',Courier,mo
 .price-sym{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px}
 #live-price{font-size:18px;font-weight:700;color:var(--green);transition:color .2s;line-height:1.2}
 #live-price.dn{color:var(--red)}
-.coin-search-wrap{
-  display:flex;
-  align-items:center;
-  min-width:180px;
-  max-width:220px;
-  flex:1;
-  background:var(--panel-2);
-  border:1px solid var(--border);
-  border-radius:8px;
-  overflow:hidden;
-}
-#coin-search{
-  width:100%;
-  background:transparent;
-  border:none;
-  color:var(--text);
-  padding:8px 10px;
-  font:11px 'Courier New', monospace;
-  outline:none;
-}
+.coin-search-wrap{display:flex;align-items:center;min-width:180px;max-width:220px;flex:1;background:var(--panel-2);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+#coin-search{width:100%;background:transparent;border:none;color:var(--text);padding:8px 10px;font:11px 'Courier New', monospace;outline:none}
 #coin-search::placeholder{color:var(--muted)}
-#coin-sel{background:var(--panel-2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:7px;font:11px 'Courier New',monospace;cursor:pointer;outline:none;transition:border-color .2s, box-shadow .2s}
+#coin-sel{background:var(--panel-2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:7px;font:11px 'Courier New',monospace;cursor:pointer;outline:none;transition:border-color .2s,box-shadow .2s}
 #coin-sel:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(240,178,75,.12)}
 .thr-wrap{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.015);border:1px solid rgba(255,255,255,.04)}
 .thr-wrap label{font-size:10px;color:var(--muted);white-space:nowrap}
@@ -74,7 +56,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',Courier,mo
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.38}}
 #main{display:flex;flex:1;overflow:hidden;min-height:0;padding:12px;gap:12px}
 #book{width:385px;min-width:385px;border:1px solid var(--border);border-radius:16px;background:linear-gradient(180deg,rgba(20,28,39,.8),rgba(12,16,22,.92));display:flex;flex-direction:column;overflow:hidden}
-.bk-hdr{display:grid;grid-template-columns:115px 1fr 1fr;padding:7px 12px;background:rgba(255,255,255,.02);border-bottom:1px solid var(--border);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px}
+.bk-hdr{display:grid;grid-template-columns:115px 1fr 1fr;padding:7px 12px;background:rgba(255,255,255,.02);border-bottom:1px solid var(--border);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
 #asks-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;min-height:0;background:linear-gradient(180deg,rgba(255,255,255,.01),rgba(255,255,255,0))}
 #asks-rows{display:flex;flex-direction:column}
 #mid-row{background:rgba(17,24,33,.8);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:8px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0}
@@ -257,7 +239,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',Courier,mo
         <div id="bias-gauge"><div id="raw-needle"></div><div id="ema-needle"></div></div>
         <span class="gauge-lbl bull">Bull</span>
       </div>
-      <div class="bias-dir-row"><span id="bias-dir" style="color:#6b7280">WAITING…</span><span id="bias-conf">���</span></div>
+      <div class="bias-dir-row"><span id="bias-dir" style="color:#6b7280">WAITING…</span><span id="bias-conf">—</span></div>
       <div class="bsigs">
         <div class="bsig"><span class="bsig-ico">📊</span><span class="bsig-name">Book Depth</span><div class="bsig-bar-wrap"><div class="bsig-bar-fill" id="s1-bar"></div></div><span class="bsig-lbl" id="s1-lbl">—</span></div>
         <div class="bsig"><span class="bsig-ico">⚡</span><span class="bsig-name">Near Pressure</span><div class="bsig-bar-wrap"><div class="bsig-bar-fill" id="s2-bar"></div></div><span class="bsig-lbl" id="s2-lbl">—</span></div>
@@ -331,7 +313,8 @@ const state = {
   biasEMA: 0,
   biasReady: false,
   candles: [],
-  chartInterval: '5m'
+  chartInterval: '5m',
+  sr: { supports: [], resistances: [] }
 };
 
 const USDT_SYMBOLS = [
@@ -888,6 +871,7 @@ function onKline(data) {
     if (state.candles.length > 200) state.candles.shift();
   }
 
+  refreshSRLevels();
   drawChart();
 }
 
@@ -963,6 +947,7 @@ function loadCandles() {
         v: Number(k[5]),
         live: false
       }));
+      refreshSRLevels();
       if (loading) loading.textContent = '';
       drawChart();
     })
@@ -971,8 +956,13 @@ function loadCandles() {
     });
 }
 
+function refreshSRLevels() {
+  state.sr = calcSRLevels(state.candles);
+}
+
 function calcSRLevels(allCandles) {
-  if (allCandles.length < 10) return { supports: [], resistances: [] };
+  if (!allCandles || allCandles.length < 10) return { supports: [], resistances: [] };
+
   const lookback = 4;
   const highs = [];
   const lows = [];
@@ -981,10 +971,12 @@ function calcSRLevels(allCandles) {
     const candle = allCandles[i];
     let isHigh = true;
     let isLow = true;
+
     for (let j = 1; j <= lookback; j++) {
       if (allCandles[i - j].h >= candle.h || allCandles[i + j].h >= candle.h) isHigh = false;
       if (allCandles[i - j].l <= candle.l || allCandles[i + j].l <= candle.l) isLow = false;
     }
+
     if (isHigh) highs.push(candle.h);
     if (isLow) lows.push(candle.l);
   }
@@ -992,63 +984,58 @@ function calcSRLevels(allCandles) {
   const cluster = (prices) => {
     if (!prices.length) return [];
     const groups = [];
-    prices.sort((a, b) => a - b).forEach(price => {
-      const group = groups.find(g => Math.abs(g.price - price) / Math.max(price, 0.0001) < 0.004);
-      if (group) {
-        group.price = (group.price * group.count + price) / (group.count + 1);
-        group.count += 1;
-      } else {
-        groups.push({ price, count: 1 });
-      }
-    });
-    return groups.sort((a, b) => b.count - a.count).slice(0, 6);
+
+    prices
+      .slice()
+      .sort((a, b) => a - b)
+      .forEach((price) => {
+        const group = groups.find(g => Math.abs(g.price - price) / Math.max(price, 0.0001) < 0.004);
+        if (group) {
+          group.price = (group.price * group.count + price) / (group.count + 1);
+          group.count += 1;
+        } else {
+          groups.push({ price, count: 1 });
+        }
+      });
+
+    return groups
+      .sort((a, b) => b.count - a.count)
+      .map(g => g.price)
+      .slice(0, 4)
+      .sort((a, b) => a - b);
   };
 
   return {
-    supports: cluster(lows),
-    resistances: cluster(highs)
+    supports: cluster(lows).slice(0, 3),
+    resistances: cluster(highs).slice(0, 3)
   };
 }
 
-function drawLiquidityCol(ctx, colX, colEnd, candleAreaH, p2y) {
-  const colW = colEnd - colX;
-  const halfMax = (colW / 2) - 3;
-  ctx.fillStyle = '#0d1117';
-  ctx.fillRect(colX, 0, colW, candleAreaH);
-  ctx.strokeStyle = '#1c2230';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(colX, 0);
-  ctx.lineTo(colX, candleAreaH);
-  ctx.stroke();
+function drawSRLevels(ctx, width, height, minPrice, maxPrice) {
+  const pad = 16;
+  const range = Math.max(0.000001, maxPrice - minPrice);
 
-  ctx.fillStyle = '#2e3a50';
-  ctx.font = '7px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('LIQ DEPTH', colX + colW / 2, 10);
+  const yForPrice = (price) => pad + ((maxPrice - price) / range) * (height - pad * 2);
 
-  if (!state.book.bids.length && !state.book.asks.length) return;
+  const drawLine = (price, color, label) => {
+    const y = yForPrice(price);
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(width, y);
+    ctx.strokeStyle = color;
+    ctx.setLineDash([6, 5]);
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.setLineDash([]);
 
-  const allOrders = [...state.book.bids, ...state.book.asks];
-  const maxUsd = Math.max(...allOrders.map(o => o.usd), 1);
-  const midX = colX + colW / 2;
+    ctx.fillStyle = color;
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${label} ${fmtPrice(price)}`, width - 8, y - 6);
+  };
 
-  ctx.strokeStyle = '#1c2230';
-  ctx.beginPath();
-  ctx.moveTo(midX, 14);
-  ctx.lineTo(midX, candleAreaH - 2);
-  ctx.stroke();
-
-  allOrders.forEach(order => {
-    const y = p2y(order.price);
-    if (y < 14 || y > candleAreaH - 2) return;
-    const isBid = order.price <= state.livePrice;
-    const width = Math.min(colW - 6, (order.usd / maxUsd) * (colW - 8));
-    const xStart = isBid ? midX - width / 2 : midX + 1;
-    const xEnd = isBid ? midX : midX + width;
-    ctx.fillStyle = isBid ? 'rgba(31,210,154,0.35)' : 'rgba(255,91,115,0.35)';
-    ctx.fillRect(xStart, y, Math.max(2, xEnd - xStart), 2);
-  });
+  (state.sr.supports || []).forEach(price => drawLine(price, 'rgba(31,210,154,0.9)', 'S'));
+  (state.sr.resistances || []).forEach(price => drawLine(price, 'rgba(255,91,115,0.9)', 'R'));
 }
 
 function drawChart() {
@@ -1057,7 +1044,7 @@ function drawChart() {
   if (!canvas || !body) return;
 
   const width = body.clientWidth || 360;
-  const height = body.clientHeight || 190;
+  const height = body.clientHeight || 180;
   const dpr = window.devicePixelRatio || 1;
   canvas.width = Math.round(width * dpr);
   canvas.height = Math.round(height * dpr);
@@ -1089,21 +1076,20 @@ function drawChart() {
   const minPrice = Math.min(...allPrices);
   const priceRange = Math.max(0.000001, maxPrice - minPrice);
 
-  const p2y = value => {
+  const p2y = (value) => {
     const ratio = (value - minPrice) / priceRange;
     return chartHeight - pad - ratio * (chartHeight - pad * 2);
   };
 
-  ctx.fillStyle = '#0d1117';
-  ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = '#0b0e11';
+  ctx.fillRect(0, 0, chartWidth, chartHeight);
 
-  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-  ctx.lineWidth = 1;
   for (let i = 0; i < 5; i++) {
     const y = (chartHeight / 5) * i;
     ctx.beginPath();
     ctx.moveTo(0, y);
     ctx.lineTo(chartWidth, y);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
     ctx.stroke();
   }
 
@@ -1112,11 +1098,11 @@ function drawChart() {
 
   state.candles.forEach((candle, index) => {
     const x = plotX + index * slot + slot * 0.2;
+    const w = Math.max(2, slot * 0.6);
     const yOpen = p2y(candle.o);
     const yClose = p2y(candle.c2);
     const yHigh = p2y(candle.h);
     const yLow = p2y(candle.l);
-    const w = Math.max(2, slot * 0.5);
     const isUp = candle.c2 >= candle.o;
 
     ctx.strokeStyle = isUp ? '#1fd29a' : '#ff5b73';
@@ -1126,7 +1112,7 @@ function drawChart() {
     ctx.stroke();
 
     ctx.fillStyle = isUp ? '#1fd29a' : '#ff5b73';
-    ctx.fillRect(x, Math.min(yOpen, yClose), w, Math.max(2, Math.abs(yOpen - yClose)));
+    ctx.fillRect(x, Math.min(yOpen, yClose), w, Math.max(2, Math.abs(yClose - yOpen)));
   });
 
   ctx.fillStyle = '#8b99af';
@@ -1138,13 +1124,16 @@ function drawChart() {
     ctx.fillText(fmtPrice(value), chartWidth - 8, y);
   }
 
-  drawLiquidityCol(ctx, plotWidth + 5, plotWidth + liqWidth, chartHeight, p2y);
+  if ((state.sr.supports && state.sr.supports.length) || (state.sr.resistances && state.sr.resistances.length)) {
+    drawSRLevels(ctx, chartWidth, chartHeight, minPrice, maxPrice);
+  }
 }
 
 function changeInterval(newTF) {
   if (newTF === state.chartInterval) return;
   state.chartInterval = newTF;
   state.candles = [];
+  state.sr = { supports: [], resistances: [] };
   document.querySelectorAll('.tf-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tf === newTF);
   });
@@ -1162,6 +1151,7 @@ function resetUi() {
   state.biasEMA = 0;
   state.biasReady = false;
   state.candles = [];
+  state.sr = { supports: [], resistances: [] };
 
   const live = document.getElementById('live-price');
   const mid = document.getElementById('mid-price');
@@ -1178,18 +1168,25 @@ function resetUi() {
   const spread = document.getElementById('spread-lbl');
   if (spread) spread.textContent = 'Spread: —';
 
-  const pair = document.getElementById('pair-sym');
-  if (pair) pair.textContent = formatPairText(state.symbol);
+  const stBid = document.getElementById('st-bid');
+  const stAsk = document.getElementById('st-ask');
+  const stCvd = document.getElementById('st-cvd');
+  const stEvents = document.getElementById('st-events');
+  if (stBid) stBid.textContent = '—';
+  if (stAsk) stAsk.textContent = '—';
+  if (stCvd) stCvd.textContent = '—';
+  if (stEvents) stEvents.textContent = '0';
 
-  document.getElementById('st-bid').textContent = '—';
-  document.getElementById('st-ask').textContent = '—';
-  document.getElementById('st-cvd').textContent = '—';
-  document.getElementById('st-events').textContent = '0';
-  document.getElementById('entry-lbl').textContent = '⏳ WAIT';
-  document.getElementById('entry-reason').textContent = 'Accumulating data…';
-  document.getElementById('bias-dir').textContent = 'WAITING…';
-  document.getElementById('bias-conf').textContent = '—';
-  document.getElementById('alert-scroll').innerHTML = '<div class="empty-msg">👁 Monitoring…<br>Hunt &amp; spoof events appear here.</div>';
+  const entryLbl = document.getElementById('entry-lbl');
+  const entryReason = document.getElementById('entry-reason');
+  const biasDir = document.getElementById('bias-dir');
+  const biasConf = document.getElementById('bias-conf');
+  const alertScroll = document.getElementById('alert-scroll');
+  if (entryLbl) entryLbl.textContent = '⏳ WAIT';
+  if (entryReason) entryReason.textContent = 'Accumulating data…';
+  if (biasDir) biasDir.textContent = 'WAITING…';
+  if (biasConf) biasConf.textContent = '—';
+  if (alertScroll) alertScroll.innerHTML = '<div class="empty-msg">👁 Monitoring…<br>Hunt &amp; spoof events appear here.</div>';
 }
 
 function bindCollapsibles() {
@@ -1197,20 +1194,17 @@ function bindCollapsibles() {
     btn.addEventListener('click', () => {
       const target = document.getElementById(btn.dataset.target);
       if (!target) return;
-      const collapse = target.classList.toggle('collapsed');
-      btn.textContent = collapse ? '+' : '−';
-      btn.setAttribute('aria-label', collapse ? 'Expand' : 'Collapse');
+      target.classList.toggle('collapsed');
+      btn.textContent = target.classList.contains('collapsed') ? '+' : '−';
     });
   });
 }
 
-function onResize() {
+window.addEventListener('resize', () => {
   state.rows = IS_MOBILE() ? 10 : 14;
   renderBook();
   drawChart();
-}
-
-window.addEventListener('resize', onResize);
+});
 
 document.getElementById('thr-inp').addEventListener('input', function () {
   const value = parseInt(this.value, 10);
@@ -1225,36 +1219,21 @@ document.getElementById('thr-inp').addEventListener('input', function () {
 document.getElementById('coin-search').addEventListener('change', function () {
   const value = this.value.trim().toLowerCase();
   if (!value) return;
-
   const match = USDT_SYMBOLS.includes(value)
     ? value
     : USDT_SYMBOLS.find(symbol => symbol.startsWith(value));
-
   if (match) setSymbol(match);
-  else this.value = state.symbol;
 });
 
 document.getElementById('coin-search').addEventListener('keydown', function (event) {
   if (event.key === 'Enter') {
     const value = this.value.trim().toLowerCase();
-    if (!value) {
-      this.value = state.symbol;
-      return;
-    }
-
+    if (!value) return;
     const match = USDT_SYMBOLS.includes(value)
       ? value
       : USDT_SYMBOLS.find(symbol => symbol.startsWith(value));
-
     if (match) setSymbol(match);
-    else this.value = state.symbol;
   }
-});
-
-document.getElementById('coin-search').addEventListener('input', function () {
-  const typed = this.value.trim().toLowerCase();
-  if (!typed) return;
-  // Let the user type freely and only switch on Enter/change.
 });
 
 document.querySelectorAll('.tf-btn').forEach(btn => {
@@ -1262,13 +1241,8 @@ document.querySelectorAll('.tf-btn').forEach(btn => {
 });
 
 populateCoinList();
-const coinInput = document.getElementById('coin-search');
-if (coinInput) {
-  coinInput.value = state.symbol;
-}
-document.getElementById('pair-sym').textContent = formatPairText(state.symbol);
-bindCollapsibles();
 resetUi();
+bindCollapsibles();
 connect();
 </script>
 </body>
