@@ -343,7 +343,8 @@ const state = {
   candles: [],
   chartInterval: '5m',
   sr: { supports: [], resistances: [] },
-  intelFeed: []
+  intelFeed: [],
+  isClosing: false
 };
 
 const USDT_SYMBOLS = [
@@ -502,6 +503,7 @@ function setSymbol(symbol) {
   if (input) input.value = normalized;
   if (pair) pair.textContent = formatPairText(normalized);
 
+  stopSocket();
   resetUi();
   connect();
 }
@@ -1091,16 +1093,33 @@ function resetUi() {
   renderStats();
 }
 
+function stopSocket() {
+  state.isClosing = true;
+  if (state.ws) {
+    state.ws.onclose = null;
+    state.ws.close();
+    state.ws = null;
+  }
+  clearTimeout(state.reconnectTimer);
+}
+
 function connect() {
   const symbol = state.symbol || 'btcusdt';
   const wsUrl = `wss://stream.binance.com:9443/stream?streams=${symbol.toLowerCase()}@depth@100ms/${symbol.toLowerCase()}@trade/${symbol.toLowerCase()}@kline_5m`;
+
+  if (state.ws && (
+    state.ws.readyState === WebSocket.OPEN ||
+    state.ws.readyState === WebSocket.CONNECTING
+  )) {
+    return;
+  }
 
   if (state.ws) {
     state.ws.close();
     state.ws = null;
   }
 
-  setConn(false, 'Connecting…');
+  state.isClosing = false;
   const ws = new WebSocket(wsUrl);
   state.ws = ws;
 
@@ -1132,6 +1151,13 @@ function connect() {
   };
 
   ws.onclose = () => {
+    state.ws = null;
+
+    if (state.isClosing) {
+      state.isClosing = false;
+      return;
+    }
+
     setConn(false, 'Reconnecting…');
     clearTimeout(state.reconnectTimer);
     state.reconnectTimer = setTimeout(() => connect(), 3000);
@@ -1182,6 +1208,7 @@ function bindUi() {
       setTimeout(() => {
         document.getElementById('chart-loading').textContent = '';
       }, 500);
+      stopSocket();
       connect();
     });
   });
