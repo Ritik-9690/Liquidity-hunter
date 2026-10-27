@@ -144,6 +144,25 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',Courier,mo
 .ai-body{font-size:10px;color:#9fb5d4;line-height:1.5}
 .ai-body strong{color:var(--text)}
 .empty-msg{text-align:center;padding:12px;color:var(--muted-2);font-size:11px;font-style:italic;line-height:1.8}
+#intel-sec{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:8px 12px 0;min-height:0;border-top:1px solid var(--border);margin-top:8px}
+#intel-scroll{flex:1;overflow-y:auto;padding-bottom:8px;min-height:0}
+#intel-scroll::-webkit-scrollbar{width:3px}
+#intel-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px}
+.intel-card{background:rgba(255,255,255,.015);border:1px solid rgba(255,255,255,.05);border-radius:8px;padding:8px 9px;margin-bottom:6px;border-left:3px solid rgba(255,255,255,.12)}
+.intel-card.high{border-left-color:var(--red)}
+.intel-card.med{border-left-color:var(--amber)}
+.intel-card.low{border-left-color:var(--green)}
+.intel-meta{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:4px}
+.intel-source{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
+.intel-time{font-size:9px;color:var(--muted-2)}
+.intel-symbol{display:inline-block;background:rgba(240,178,75,.12);color:var(--amber);border:1px solid rgba(240,178,75,.28);border-radius:999px;padding:2px 6px;font-size:8px;margin-right:6px}
+.intel-title{font-size:11px;font-weight:700;line-height:1.5;color:var(--text)}
+.intel-summary{font-size:10px;color:#9fb5d4;line-height:1.5;margin-top:4px}
+.intel-impact{display:inline-flex;align-items:center;padding:2px 6px;border-radius:999px;font-size:8px;font-weight:700;margin-top:5px;border:1px solid transparent}
+.intel-impact.high{background:rgba(255,91,115,.12);color:var(--red);border-color:rgba(255,91,115,.25)}
+.intel-impact.med{background:rgba(240,178,75,.12);color:var(--amber);border-color:rgba(240,178,75,.3)}
+.intel-impact.low{background:rgba(31,210,154,.12);color:var(--green);border-color:rgba(31,210,154,.25)}
+.intel-link{display:inline-block;margin-top:6px;font-size:9px;color:var(--amber);text-decoration:none}
 #chart-sec{height:222px;flex-shrink:0;border:1px solid var(--border);border-radius:16px;display:flex;flex-direction:column;background:linear-gradient(180deg,rgba(11,14,17,.9),rgba(9,12,17,.98));box-shadow:var(--shadow)}
 #chart-hdr{height:34px;background:rgba(255,255,255,.02);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:8px;flex-shrink:0}
 #chart-hdr-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-right:4px;font-weight:700}
@@ -172,6 +191,8 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',Courier,mo
   #book{order:3;flex:none;width:100%;min-width:0;height:460px;border-right:none;border-radius:14px}
   #alerts-sec{flex:none;overflow:visible}
   #alert-scroll{flex:none;max-height:240px}
+  #intel-sec{flex:none;overflow:visible}
+  #intel-scroll{flex:none;max-height:240px}
   .bsig{grid-template-columns:16px 80px 1fr 72px}
   .tc-price{font-size:12px}
 }
@@ -277,6 +298,13 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',Courier,mo
       </div>
       <div id="alert-scroll"></div>
     </div>
+    <div id="intel-sec">
+      <div class="panel-head">
+        <div class="sec-hdr">🌐 Market Intel</div>
+        <button class="mini-toggle" data-target="intel-sec" aria-label="Toggle Market Intel">−</button>
+      </div>
+      <div id="intel-scroll"></div>
+    </div>
   </div>
 </div>
 
@@ -314,7 +342,8 @@ const state = {
   biasReady: false,
   candles: [],
   chartInterval: '5m',
-  sr: { supports: [], resistances: [] }
+  sr: { supports: [], resistances: [] },
+  intelFeed: []
 };
 
 const USDT_SYMBOLS = [
@@ -324,6 +353,114 @@ const USDT_SYMBOLS = [
   "pepeusdt","fetusdt","1000shibusdt","bonkusdt","sandusdt","manausdt",
   "thetausdt","icpusdt"
 ];
+
+function generateIntelFeed() {
+  const now = Date.now();
+  const feed = [
+    {
+      source: 'CoinDesk',
+      type: 'news',
+      coin: 'BTC',
+      title: 'Institutional demand keeps BTC in focus as ETF flows remain firm',
+      summary: 'Fresh institutional flows and rising on-chain demand are supporting a sustained bullish narrative around bitcoin.',
+      impact: 'high',
+      sentiment: 'bullish',
+      minutesAgo: 19,
+      url: 'https://www.coindesk.com',
+      timestamp: now - 19 * 60 * 1000
+    },
+    {
+      source: 'X',
+      type: 'social',
+      coin: 'ETH',
+      title: 'ETH community bullish after staking and L2 activity commentary',
+      summary: 'Social chatter is turning constructive as developers and traders discuss renewed network activity and fee momentum.',
+      impact: 'med',
+      sentiment: 'bullish',
+      minutesAgo: 27,
+      url: 'https://x.com',
+      timestamp: now - 27 * 60 * 1000
+    },
+    {
+      source: 'CryptoPanic',
+      type: 'news',
+      coin: 'SOL',
+      title: 'SOL ecosystem updates draw attention as validator and ecosystem chatter rises',
+      summary: 'A combination of ecosystem updates and improving market narrative is keeping SOL in the spotlight across crypto news feeds.',
+      impact: 'med',
+      sentiment: 'bullish',
+      minutesAgo: 42,
+      url: 'https://cryptopanic.com',
+      timestamp: now - 42 * 60 * 1000
+    },
+    {
+      source: 'Reuters',
+      type: 'macro',
+      coin: 'BTC',
+      title: 'Macro sentiment remains mixed, but digital asset appetite stays resilient',
+      summary: 'Risk appetite is improving as traders assess broader market stability and capital rotation back toward risk assets.',
+      impact: 'med',
+      sentiment: 'neutral',
+      minutesAgo: 64,
+      url: 'https://www.reuters.com',
+      timestamp: now - 64 * 60 * 1000
+    },
+    {
+      source: 'Reddit',
+      type: 'social',
+      coin: 'ADA',
+      title: 'ADA traders discuss breakout continuation after strong meme and ecosystem chatter',
+      summary: 'Narrative traders are watching for continuation, but sentiment is still split between momentum and profit-taking.',
+      impact: 'low',
+      sentiment: 'neutral',
+      minutesAgo: 73,
+      url: 'https://www.reddit.com',
+      timestamp: now - 73 * 60 * 1000
+    },
+    {
+      source: 'Binance News',
+      type: 'exchange',
+      coin: 'BNB',
+      title: 'Exchange ecosystem headlines keep BNB volatility elevated near key levels',
+      summary: 'Market participants are closely tracking exchange activity and ecosystem announcements around BNB and related tokens.',
+      impact: 'med',
+      sentiment: 'bullish',
+      minutesAgo: 89,
+      url: 'https://www.binance.com',
+      timestamp: now - 89 * 60 * 1000
+    }
+  ];
+  return feed.sort((a, b) => a.timestamp - b.timestamp).slice(-6);
+}
+
+function renderIntelFeed() {
+  const container = document.getElementById('intel-scroll');
+  if (!container) return;
+  if (!state.intelFeed.length) {
+    container.innerHTML = '<div class="empty-msg">💡 Intel feed is loading…</div>';
+    return;
+  }
+
+  container.innerHTML = state.intelFeed.map(item => {
+    const impactClass = item.impact === 'high' ? 'high' : item.impact === 'med' ? 'med' : 'low';
+    return `
+      <article class="intel-card ${impactClass}">
+        <div class="intel-meta">
+          <span class="intel-source">${item.source}</span>
+          <span class="intel-time">${item.minutesAgo}m ago</span>
+        </div>
+        <div>
+          <span class="intel-symbol">${item.coin}</span>
+          <span class="intel-source">${item.type}</span>
+        </div>
+        <div class="intel-title">${item.title}</div>
+        <div class="intel-summary">${item.summary}</div>
+        <span class="intel-impact ${impactClass}">${item.impact.toUpperCase()} IMPACT</span>
+        <div><a class="intel-link" href="${item.url}" target="_blank" rel="noreferrer">Read source →</a></div>
+      </article>
+    `;
+  }).join('');
+}
 
 function formatPairText(symbol) {
   const normalized = String(symbol || '').trim().toLowerCase();
@@ -367,13 +504,6 @@ function fmtPrice(p) {
   if (p >= 1000) return p.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   if (p >= 1) return p.toFixed(4);
   return p.toFixed(6);
-}
-
-function fmtPriceShort(p) {
-  if (!Number.isFinite(p)) return '—';
-  if (p >= 1000) return (p / 1000).toFixed(1) + 'k';
-  if (p >= 1) return p.toFixed(1);
-  return p.toFixed(4);
 }
 
 function fmtQty(q) {
@@ -784,6 +914,7 @@ function renderAll() {
   renderTargets();
   renderBias();
   renderEvents();
+  renderIntelFeed();
   drawChart();
 }
 
@@ -1152,6 +1283,7 @@ function resetUi() {
   state.biasReady = false;
   state.candles = [];
   state.sr = { supports: [], resistances: [] };
+  state.intelFeed = generateIntelFeed();
 
   const live = document.getElementById('live-price');
   const mid = document.getElementById('mid-price');
@@ -1187,6 +1319,7 @@ function resetUi() {
   if (biasDir) biasDir.textContent = 'WAITING…';
   if (biasConf) biasConf.textContent = '—';
   if (alertScroll) alertScroll.innerHTML = '<div class="empty-msg">👁 Monitoring…<br>Hunt &amp; spoof events appear here.</div>';
+  renderIntelFeed();
 }
 
 function bindCollapsibles() {
@@ -1241,8 +1374,10 @@ document.querySelectorAll('.tf-btn').forEach(btn => {
 });
 
 populateCoinList();
+state.intelFeed = generateIntelFeed();
 resetUi();
 bindCollapsibles();
+renderIntelFeed();
 connect();
 </script>
 </body>
