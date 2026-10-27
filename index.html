@@ -257,7 +257,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',Courier,mo
         <div id="bias-gauge"><div id="raw-needle"></div><div id="ema-needle"></div></div>
         <span class="gauge-lbl bull">Bull</span>
       </div>
-      <div class="bias-dir-row"><span id="bias-dir" style="color:#6b7280">WAITING…</span><span id="bias-conf">—</span></div>
+      <div class="bias-dir-row"><span id="bias-dir" style="color:#6b7280">WAITING…</span><span id="bias-conf">���</span></div>
       <div class="bsigs">
         <div class="bsig"><span class="bsig-ico">📊</span><span class="bsig-name">Book Depth</span><div class="bsig-bar-wrap"><div class="bsig-bar-fill" id="s1-bar"></div></div><span class="bsig-lbl" id="s1-lbl">—</span></div>
         <div class="bsig"><span class="bsig-ico">⚡</span><span class="bsig-name">Near Pressure</span><div class="bsig-bar-wrap"><div class="bsig-bar-fill" id="s2-bar"></div></div><span class="bsig-lbl" id="s2-lbl">—</span></div>
@@ -359,13 +359,9 @@ function populateCoinList() {
 
 function setSymbol(symbol) {
   const normalized = String(symbol || '').trim().toLowerCase();
-
-  if (!normalized || !USDT_SYMBOLS.includes(normalized)) {
-    return;
-  }
+  if (!normalized || !USDT_SYMBOLS.includes(normalized)) return;
 
   state.symbol = normalized;
-
   const input = document.getElementById('coin-search');
   const pair = document.getElementById('pair-sym');
 
@@ -1227,22 +1223,38 @@ document.getElementById('thr-inp').addEventListener('input', function () {
 });
 
 document.getElementById('coin-search').addEventListener('change', function () {
-  setSymbol(this.value);
+  const value = this.value.trim().toLowerCase();
+  if (!value) return;
+
+  const match = USDT_SYMBOLS.includes(value)
+    ? value
+    : USDT_SYMBOLS.find(symbol => symbol.startsWith(value));
+
+  if (match) setSymbol(match);
+  else this.value = state.symbol;
 });
 
 document.getElementById('coin-search').addEventListener('keydown', function (event) {
   if (event.key === 'Enter') {
-    setSymbol(this.value);
+    const value = this.value.trim().toLowerCase();
+    if (!value) {
+      this.value = state.symbol;
+      return;
+    }
+
+    const match = USDT_SYMBOLS.includes(value)
+      ? value
+      : USDT_SYMBOLS.find(symbol => symbol.startsWith(value));
+
+    if (match) setSymbol(match);
+    else this.value = state.symbol;
   }
 });
 
 document.getElementById('coin-search').addEventListener('input', function () {
   const typed = this.value.trim().toLowerCase();
   if (!typed) return;
-  const match = USDT_SYMBOLS.find(symbol => symbol.startsWith(typed));
-  if (match) {
-    this.value = match;
-  }
+  // Let the user type freely and only switch on Enter/change.
 });
 
 document.querySelectorAll('.tf-btn').forEach(btn => {
