@@ -329,6 +329,7 @@ const state = {
   symbol: 'btcusdt',
   ws: null,
   reconnectTimer: null,
+  fallbackTimer: null,
   uiTimer: null,
   chartTimer: null,
   book: { bids: [], asks: [] },
@@ -344,7 +345,8 @@ const state = {
   chartInterval: '5m',
   sr: { supports: [], resistances: [] },
   intelFeed: [],
-  isClosing: false
+  isClosing: false,
+  useFallback: false
 };
 
 const USDT_SYMBOLS = [
@@ -352,7 +354,7 @@ const USDT_SYMBOLS = [
   "avaxusdt","linkusdt","maticusdt","dotusdt","ltcusdt","uniusdt","atomusdt",
   "filusdt","nearusdt","opusdt","injusdt","aptusdt","arbusdt","rndrusdt",
   "pepeusdt","fetusdt","1000shibusdt","bonkusdt","sandusdt","manausdt",
-  "thetausdt","icpusdt"
+  "thetausdt","icpusdt","trxusdt","bchusdt","etcusdt","wifusdt","suiusdt"
 ];
 
 function normalizeSymbolInput(raw) {
@@ -363,85 +365,18 @@ function normalizeSymbolInput(raw) {
   const cleaned = text.replace(/[^a-z0-9]/g, '');
   if (!cleaned) return '';
 
-  const normalized = cleaned.endsWith('usdt') ? cleaned : `${cleaned}usdt`;
-  return normalized;
+  return cleaned.endsWith('usdt') ? cleaned : `${cleaned}usdt`;
 }
 
 function generateIntelFeed() {
   const now = Date.now();
   const feed = [
-    {
-      source: 'CoinDesk',
-      type: 'news',
-      coin: 'BTC',
-      title: 'Institutional demand keeps BTC in focus as ETF flows remain firm',
-      summary: 'Fresh institutional flows and rising on-chain demand are supporting a sustained bullish narrative around bitcoin.',
-      impact: 'high',
-      sentiment: 'bullish',
-      minutesAgo: 19,
-      url: 'https://www.coindesk.com',
-      timestamp: now - 19 * 60 * 1000
-    },
-    {
-      source: 'X',
-      type: 'social',
-      coin: 'ETH',
-      title: 'ETH community bullish after staking and L2 activity commentary',
-      summary: 'Social chatter is turning constructive as developers and traders discuss renewed network activity and fee momentum.',
-      impact: 'med',
-      sentiment: 'bullish',
-      minutesAgo: 27,
-      url: 'https://x.com',
-      timestamp: now - 27 * 60 * 1000
-    },
-    {
-      source: 'CryptoPanic',
-      type: 'news',
-      coin: 'SOL',
-      title: 'SOL ecosystem updates draw attention as validator and ecosystem chatter rises',
-      summary: 'A combination of ecosystem updates and improving market narrative is keeping SOL in the spotlight across crypto news feeds.',
-      impact: 'med',
-      sentiment: 'bullish',
-      minutesAgo: 42,
-      url: 'https://cryptopanic.com',
-      timestamp: now - 42 * 60 * 1000
-    },
-    {
-      source: 'Reuters',
-      type: 'macro',
-      coin: 'BTC',
-      title: 'Macro sentiment remains mixed, but digital asset appetite stays resilient',
-      summary: 'Risk appetite is improving as traders assess broader market stability and capital rotation back toward risk assets.',
-      impact: 'med',
-      sentiment: 'neutral',
-      minutesAgo: 64,
-      url: 'https://www.reuters.com',
-      timestamp: now - 64 * 60 * 1000
-    },
-    {
-      source: 'Reddit',
-      type: 'social',
-      coin: 'ADA',
-      title: 'ADA traders discuss breakout continuation after strong meme and ecosystem chatter',
-      summary: 'Narrative traders are watching for continuation, but sentiment is still split between momentum and profit-taking.',
-      impact: 'low',
-      sentiment: 'neutral',
-      minutesAgo: 73,
-      url: 'https://www.reddit.com',
-      timestamp: now - 73 * 60 * 1000
-    },
-    {
-      source: 'Binance News',
-      type: 'exchange',
-      coin: 'BNB',
-      title: 'Exchange ecosystem headlines keep BNB volatility elevated near key levels',
-      summary: 'Market participants are closely tracking exchange activity and ecosystem announcements around BNB and related tokens.',
-      impact: 'med',
-      sentiment: 'bullish',
-      minutesAgo: 89,
-      url: 'https://www.binance.com',
-      timestamp: now - 89 * 60 * 1000
-    }
+    { source: 'CoinDesk', type: 'news', coin: 'BTC', title: 'Institutional demand keeps BTC in focus as ETF flows remain firm', summary: 'Fresh institutional flows and rising on-chain demand are supporting a sustained bullish narrative around bitcoin.', impact: 'high', sentiment: 'bullish', minutesAgo: 19, url: 'https://www.coindesk.com', timestamp: now - 19 * 60 * 1000 },
+    { source: 'X', type: 'social', coin: 'ETH', title: 'ETH community bullish after staking and L2 activity commentary', summary: 'Social chatter is turning constructive as developers and traders discuss renewed network activity and fee momentum.', impact: 'med', sentiment: 'bullish', minutesAgo: 27, url: 'https://x.com', timestamp: now - 27 * 60 * 1000 },
+    { source: 'CryptoPanic', type: 'news', coin: 'SOL', title: 'SOL ecosystem updates draw attention as validator and ecosystem chatter rises', summary: 'A combination of ecosystem updates and improving market narrative is keeping SOL in the spotlight across crypto news feeds.', impact: 'med', sentiment: 'bullish', minutesAgo: 42, url: 'https://cryptopanic.com', timestamp: now - 42 * 60 * 1000 },
+    { source: 'Reuters', type: 'macro', coin: 'BTC', title: 'Macro sentiment remains mixed, but digital asset appetite stays resilient', summary: 'Risk appetite is improving as traders assess broader market stability and capital rotation back toward risk assets.', impact: 'med', sentiment: 'neutral', minutesAgo: 64, url: 'https://www.reuters.com', timestamp: now - 64 * 60 * 1000 },
+    { source: 'Reddit', type: 'social', coin: 'ADA', title: 'ADA traders discuss breakout continuation after strong meme and ecosystem chatter', summary: 'Narrative traders are watching for continuation, but sentiment is still split between momentum and profit-taking.', impact: 'low', sentiment: 'neutral', minutesAgo: 73, url: 'https://www.reddit.com', timestamp: now - 73 * 60 * 1000 },
+    { source: 'Binance News', type: 'exchange', coin: 'BNB', title: 'Exchange ecosystem headlines keep BNB volatility elevated near key levels', summary: 'Market participants are closely tracking exchange activity and ecosystem announcements around BNB and related tokens.', impact: 'med', sentiment: 'bullish', minutesAgo: 89, url: 'https://www.binance.com', timestamp: now - 89 * 60 * 1000 }
   ];
   return feed.sort((a, b) => a.timestamp - b.timestamp).slice(-6);
 }
@@ -487,9 +422,7 @@ function populateCoinList() {
   if (!datalist) return;
 
   const suggestions = [...new Set([...USDT_SYMBOLS, 'solusdt', 'xrpusdt', 'pepeusdt', 'arbusdt', 'linkusdt', 'aptusdt'])];
-  datalist.innerHTML = suggestions
-    .map(symbol => `<option value="${symbol}"></option>`)
-    .join('');
+  datalist.innerHTML = suggestions.map(symbol => `<option value="${symbol}"></option>`).join('');
 }
 
 function setSymbol(symbol) {
@@ -608,12 +541,8 @@ function renderTargets() {
     return;
   }
 
-  const upWall = state.book.asks
-    .filter(a => a.usd >= state.threshold && a.price > state.livePrice)
-    .sort((a, b) => a.price - b.price)[0] || null;
-  const dnWall = state.book.bids
-    .filter(b => b.usd >= state.threshold && b.price < state.livePrice)
-    .sort((a, b) => b.price - a.price)[0] || null;
+  const upWall = state.book.asks.filter(a => a.usd >= state.threshold && a.price > state.livePrice).sort((a, b) => a.price - b.price)[0] || null;
+  const dnWall = state.book.bids.filter(b => b.usd >= state.threshold && b.price < state.livePrice).sort((a, b) => b.price - a.price)[0] || null;
 
   if (upWall) {
     const delta = ((upWall.price - state.livePrice) / state.livePrice * 100).toFixed(2);
@@ -665,15 +594,7 @@ function addEvent(type, side, price, usd) {
   const now = Date.now();
   const key = `${type}|${side}|${price}`;
   if (state.events.some(ev => ev.key === key && now - ev.ts < 6000)) return;
-  state.events.unshift({
-    key,
-    type,
-    side,
-    price,
-    usd,
-    ts: now,
-    time: new Date().toTimeString().slice(0, 8)
-  });
+  state.events.unshift({ key, type, side, price, usd, ts: now, time: new Date().toTimeString().slice(0, 8) });
   if (state.events.length > 60) state.events.pop();
   renderEvents();
   renderStats();
@@ -704,12 +625,8 @@ function updateWallTimestamps(bids, asks) {
 function detectHunts(bids, asks) {
   const currentBids = {};
   const currentAsks = {};
-  bids.forEach(b => {
-    if (b.usd >= state.threshold) currentBids[b.price] = b.usd;
-  });
-  asks.forEach(a => {
-    if (a.usd >= state.threshold) currentAsks[a.price] = a.usd;
-  });
+  bids.forEach(b => { if (b.usd >= state.threshold) currentBids[b.price] = b.usd; });
+  asks.forEach(a => { if (a.usd >= state.threshold) currentAsks[a.price] = a.usd; });
 
   const tolerance = state.livePrice * 0.002;
   Object.entries(state.prevWalls.bids).forEach(([priceStr, usd]) => {
@@ -732,12 +649,8 @@ function detectHunts(bids, asks) {
 function updateWalls(bids, asks) {
   const bidsWall = {};
   const asksWall = {};
-  bids.forEach(item => {
-    if (item.usd >= state.threshold) bidsWall[item.price] = item.usd;
-  });
-  asks.forEach(item => {
-    if (item.usd >= state.threshold) asksWall[item.price] = item.usd;
-  });
+  bids.forEach(item => { if (item.usd >= state.threshold) bidsWall[item.price] = item.usd; });
+  asks.forEach(item => { if (item.usd >= state.threshold) asksWall[item.price] = item.usd; });
   state.prevWalls = { bids: bidsWall, asks: asksWall };
 }
 
@@ -748,11 +661,7 @@ function getCVD() {
   const sellVol = recent.filter(t => !t.isBuy).reduce((sum, t) => sum + t.vol, 0);
   const value = (buyVol - sellVol) / (buyVol + sellVol || 1);
   const net = buyVol - sellVol;
-  return {
-    value,
-    label: value > 0.12 ? `Net Buy +${fmtUSD(net)}` : value < -0.12 ? `Net Sell ${fmtUSD(net)}` : 'Mixed',
-    net
-  };
+  return { value, label: value > 0.12 ? `Net Buy +${fmtUSD(net)}` : value < -0.12 ? `Net Sell ${fmtUSD(net)}` : 'Mixed', net };
 }
 
 function computeBias() {
@@ -995,15 +904,7 @@ function onDepth(data) {
 function onKline(data) {
   const k = data.k;
   if (!k || k.i !== state.chartInterval) return;
-  const candle = {
-    t: Number(k.t),
-    o: Number(k.o),
-    h: Number(k.h),
-    l: Number(k.l),
-    c2: Number(k.c),
-    v: Number(k.v),
-    live: !k.x
-  };
+  const candle = { t: Number(k.t), o: Number(k.o), h: Number(k.h), l: Number(k.l), c2: Number(k.c), v: Number(k.v), live: !k.x };
 
   if (!state.candles.length) {
     state.candles.push(candle);
@@ -1017,9 +918,7 @@ function onKline(data) {
     state.candles.push(candle);
   }
 
-  if (state.candles.length > 1200) {
-    state.candles = state.candles.slice(-1200);
-  }
+  if (state.candles.length > 1200) state.candles = state.candles.slice(-1200);
 }
 
 function drawChart() {
@@ -1095,35 +994,115 @@ function resetUi() {
 
 function stopSocket() {
   state.isClosing = true;
+  state.useFallback = false;
   if (state.ws) {
     state.ws.onclose = null;
     state.ws.close();
     state.ws = null;
   }
-  clearTimeout(state.reconnectTimer);
+  if (state.fallbackTimer) {
+    clearInterval(state.fallbackTimer);
+    state.fallbackTimer = null;
+  }
+  if (state.reconnectTimer) {
+    clearTimeout(state.reconnectTimer);
+    state.reconnectTimer = null;
+  }
+}
+
+async function refreshCoinData() {
+  const symbol = state.symbol.toUpperCase();
+  try {
+    const [depthRes, tickerRes, klinesRes] = await Promise.all([
+      fetch(`https://api.binance.com/api/v3/depth?symbol=${symbol}&limit=20`),
+      fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`),
+      fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${state.chartInterval}&limit=80`)
+    ]);
+
+    if (!depthRes.ok || !tickerRes.ok || !klinesRes.ok) {
+      throw new Error('Binance REST request failed');
+    }
+
+    const depth = await depthRes.json();
+    const ticker = await tickerRes.json();
+    const klines = await klinesRes.json();
+
+    const bids = (depth.bids || []).map(([price, qty]) => ({
+      price: parseFloat(price),
+      qty: parseFloat(qty),
+      usd: parseFloat(price) * parseFloat(qty)
+    })).sort((a, b) => b.price - a.price).slice(0, 20);
+
+    const asks = (depth.asks || []).map(([price, qty]) => ({
+      price: parseFloat(price),
+      qty: parseFloat(qty),
+      usd: parseFloat(price) * parseFloat(qty)
+    })).sort((a, b) => a.price - b.price).slice(0, 20);
+
+    if (bids.length && asks.length) {
+      state.book = { bids, asks };
+      state.livePrice = Number(ticker.lastPrice) || (bids[0].price + asks[0].price) / 2;
+      state.prevWalls = { bids: {}, asks: {} };
+      updateWallTimestamps(bids, asks);
+      updateWalls(bids, asks);
+      renderAll();
+    }
+
+    state.candles = (klines || []).map(k => ({
+      t: Number(k[0]),
+      o: Number(k[1]),
+      h: Number(k[2]),
+      l: Number(k[3]),
+      c2: Number(k[4]),
+      v: Number(k[5])
+    }));
+
+    setConn(true, 'Live (REST)');
+    renderAll();
+  } catch (err) {
+    console.warn('REST fallback failed:', err);
+    setConn(false, 'Retrying…');
+  }
+}
+
+function startFallbackPolling() {
+  state.useFallback = true;
+  setConn(true, 'Live (REST)');
+  if (state.fallbackTimer) clearInterval(state.fallbackTimer);
+  refreshCoinData();
+  state.fallbackTimer = setInterval(() => refreshCoinData(), 3000);
 }
 
 function connect() {
   const symbol = state.symbol || 'btcusdt';
   const wsUrl = `wss://stream.binance.com:9443/stream?streams=${symbol.toLowerCase()}@depth@100ms/${symbol.toLowerCase()}@trade/${symbol.toLowerCase()}@kline_5m`;
 
-  if (state.ws && (
-    state.ws.readyState === WebSocket.OPEN ||
-    state.ws.readyState === WebSocket.CONNECTING
-  )) {
-    return;
-  }
+  if (state.ws && (state.ws.readyState === WebSocket.OPEN || state.ws.readyState === WebSocket.CONNECTING)) return;
 
   if (state.ws) {
     state.ws.close();
     state.ws = null;
   }
 
+  if (state.reconnectTimer) {
+    clearTimeout(state.reconnectTimer);
+    state.reconnectTimer = null;
+  }
+
   state.isClosing = false;
   const ws = new WebSocket(wsUrl);
   state.ws = ws;
 
+  let openTimeout = setTimeout(() => {
+    if (ws.readyState !== WebSocket.OPEN) {
+      try { ws.close(); } catch (e) {}
+      startFallbackPolling();
+    }
+  }, 5000);
+
   ws.onopen = () => {
+    clearTimeout(openTimeout);
+    state.useFallback = false;
     setConn(true, 'Connected');
     const input = document.getElementById('coin-search');
     if (input) input.value = symbol;
@@ -1147,20 +1126,25 @@ function connect() {
   };
 
   ws.onerror = () => {
-    setConn(false, 'Reconnect');
+    clearTimeout(openTimeout);
+    setConn(false, 'Retrying…');
+    if (!state.useFallback) startFallbackPolling();
   };
 
   ws.onclose = () => {
     state.ws = null;
+    clearTimeout(openTimeout);
 
     if (state.isClosing) {
       state.isClosing = false;
       return;
     }
 
-    setConn(false, 'Reconnecting…');
-    clearTimeout(state.reconnectTimer);
-    state.reconnectTimer = setTimeout(() => connect(), 3000);
+    if (!state.useFallback) {
+      setConn(false, 'Reconnecting…');
+      clearTimeout(state.reconnectTimer);
+      state.reconnectTimer = setTimeout(() => connect(), 3000);
+    }
   };
 }
 
