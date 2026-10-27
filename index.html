@@ -40,6 +40,27 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',Courier,mo
 .price-sym{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px}
 #live-price{font-size:18px;font-weight:700;color:var(--green);transition:color .2s;line-height:1.2}
 #live-price.dn{color:var(--red)}
+.coin-search-wrap{
+  display:flex;
+  align-items:center;
+  min-width:180px;
+  max-width:220px;
+  flex:1;
+  background:var(--panel-2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  overflow:hidden;
+}
+#coin-search{
+  width:100%;
+  background:transparent;
+  border:none;
+  color:var(--text);
+  padding:8px 10px;
+  font:11px 'Courier New', monospace;
+  outline:none;
+}
+#coin-search::placeholder{color:var(--muted)}
 #coin-sel{background:var(--panel-2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:7px;font:11px 'Courier New',monospace;cursor:pointer;outline:none;transition:border-color .2s, box-shadow .2s}
 #coin-sel:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(240,178,75,.12)}
 .thr-wrap{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.015);border:1px solid rgba(255,255,255,.04)}
@@ -80,7 +101,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',Courier,mo
 #rpanel{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;background:linear-gradient(180deg,rgba(17,24,33,.96),rgba(11,14,17,.98));border:1px solid var(--border);border-radius:16px}
 .panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .sec-hdr{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;font-weight:700}
-.mini-toggle{appearance:none;border:1px solid var(--border);background:rgba(255,255,255,.02);color:var(--muted);border-radius:999px;width:18px;height:18px;display:grid;place-items:center;cursor:pointer;transition:border-color .2s,color .2s,transform .15s}
+.mini-toggle{appearance:none;border:1px solid var(--border);background:rgba(255,255,255,.02);color:var(--muted);border-radius:999px;width:18px;height:18px;display:grid;place-items:center;cursor:pointer;transition:border-color .2s,color .2s,transform .2s}
 .mini-toggle:hover{border-color:var(--amber);color:var(--amber)}
 #entry-sec{padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
 #entry-card{border:1px solid var(--border);border-radius:10px;padding:8px 11px;background:rgba(255,255,255,.015);transition:border-color .4s,background .4s,box-shadow .4s;box-shadow:inset 0 1px 0 rgba(255,255,255,.02)}
@@ -182,37 +203,19 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',Courier,mo
     <span class="price-sym" id="pair-sym">BTC / USDT</span>
     <span id="live-price">Connecting…</span>
   </div>
-  <select id="coin-sel">
-    <option value="btcusdt">BTC/USDT</option>
-    <option value="ethusdt">ETH/USDT</option>
-    <option value="solusdt">SOL/USDT</option>
-    <option value="bnbusdt">BNB/USDT</option>
-    <option value="xrpusdt">XRP/USDT</option>
-    <option value="dogeusdt">DOGE/USDT</option>
-    <option value="adausdt">ADA/USDT</option>
-    <option value="avaxusdt">AVAX/USDT</option>
-    <option value="linkusdt">LINK/USDT</option>
-    <option value="maticusdt">MATIC/USDT</option>
-    <option value="dotusdt">DOT/USDT</option>
-    <option value="ltcusdt">LTC/USDT</option>
-    <option value="uniusdt">UNI/USDT</option>
-    <option value="atomusdt">ATOM/USDT</option>
-    <option value="filusdt">FIL/USDT</option>
-    <option value="nearusdt">NEAR/USDT</option>
-    <option value="opusdt">OP/USDT</option>
-    <option value="injusdt">INJ/USDT</option>
-    <option value="aptusdt">APT/USDT</option>
-    <option value="arbusdt">ARB/USDT</option>
-    <option value="rndrusdt">RNDR/USDT</option>
-    <option value="pepeusdt">PEPE/USDT</option>
-    <option value="fetusdt">FET/USDT</option>
-    <option value="1000shibusdt">1000SHIB/USDT</option>
-    <option value="bonkusdt">BONK/USDT</option>
-    <option value="sandusdt">SAND/USDT</option>
-    <option value="manausdt">MANA/USDT</option>
-    <option value="thetausdt">THETA/USDT</option>
-    <option value="icpusdt">ICP/USDT</option>
-  </select>
+
+  <div class="coin-search-wrap">
+    <input
+      id="coin-search"
+      type="text"
+      list="coin-list"
+      value="btcusdt"
+      placeholder="Search coin..."
+      autocomplete="off"
+    />
+    <datalist id="coin-list"></datalist>
+  </div>
+
   <div class="thr-wrap">
     <label for="thr-inp">Wall Size ($)</label>
     <input type="number" inputmode="numeric" id="thr-inp" value="100000" min="1000" step="10000">
@@ -330,6 +333,48 @@ const state = {
   candles: [],
   chartInterval: '5m'
 };
+
+const USDT_SYMBOLS = [
+  "btcusdt","ethusdt","solusdt","bnbusdt","xrpusdt","dogeusdt","adausdt",
+  "avaxusdt","linkusdt","maticusdt","dotusdt","ltcusdt","uniusdt","atomusdt",
+  "filusdt","nearusdt","opusdt","injusdt","aptusdt","arbusdt","rndrusdt",
+  "pepeusdt","fetusdt","1000shibusdt","bonkusdt","sandusdt","manausdt",
+  "thetausdt","icpusdt"
+];
+
+function formatPairText(symbol) {
+  const normalized = String(symbol || '').trim().toLowerCase();
+  if (!normalized) return 'BTC / USDT';
+  const base = normalized.replace(/usdt$/, '').toUpperCase();
+  return `${base} / USDT`;
+}
+
+function populateCoinList() {
+  const datalist = document.getElementById('coin-list');
+  if (!datalist) return;
+  datalist.innerHTML = USDT_SYMBOLS
+    .map(symbol => `<option value="${symbol}"></option>`)
+    .join('');
+}
+
+function setSymbol(symbol) {
+  const normalized = String(symbol || '').trim().toLowerCase();
+
+  if (!normalized || !USDT_SYMBOLS.includes(normalized)) {
+    return;
+  }
+
+  state.symbol = normalized;
+
+  const input = document.getElementById('coin-search');
+  const pair = document.getElementById('pair-sym');
+
+  if (input) input.value = normalized;
+  if (pair) pair.textContent = formatPairText(normalized);
+
+  resetUi();
+  connect();
+}
 
 function setConn(on, txt) {
   const dot = document.getElementById('conn-dot');
@@ -1001,44 +1046,13 @@ function drawLiquidityCol(ctx, colX, colEnd, candleAreaH, p2y) {
   allOrders.forEach(order => {
     const y = p2y(order.price);
     if (y < 14 || y > candleAreaH - 2) return;
-    const isBid = order.price < (state.livePrice || 0);
-    const frac = order.usd / maxUsd;
-    const barW = Math.max(1, frac * halfMax);
-    const alpha = 0.15 + frac * 0.7;
-    const isWall = order.usd >= state.threshold;
-    ctx.fillStyle = isBid ? `rgba(31,210,154,${alpha})` : `rgba(255,91,115,${alpha})`;
-    if (isBid) ctx.fillRect(midX, y - 1, barW, 2); else ctx.fillRect(midX - barW, y - 1, barW, 2);
-
-    if (isWall) {
-      const wallColor = isBid ? 'rgba(31,210,154,.75)' : 'rgba(255,91,115,.75)';
-      ctx.strokeStyle = wallColor;
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(colX + 2, y);
-      ctx.lineTo(colEnd - 2, y);
-      ctx.stroke();
-      ctx.fillStyle = wallColor;
-      ctx.textAlign = 'center';
-      ctx.fillText(fmtUSD(order.usd), colX + colW / 2, y - 3);
-    }
+    const isBid = order.price <= state.livePrice;
+    const width = Math.min(colW - 6, (order.usd / maxUsd) * (colW - 8));
+    const xStart = isBid ? midX - width / 2 : midX + 1;
+    const xEnd = isBid ? midX : midX + width;
+    ctx.fillStyle = isBid ? 'rgba(31,210,154,0.35)' : 'rgba(255,91,115,0.35)';
+    ctx.fillRect(xStart, y, Math.max(2, xEnd - xStart), 2);
   });
-
-  ctx.fillStyle = 'rgba(31,210,154,.5)';
-  ctx.textAlign = 'center';
-  ctx.fillText('BID', midX + halfMax * 0.5, 20);
-  ctx.fillStyle = 'rgba(255,91,115,.5)';
-  ctx.fillText('ASK', midX - halfMax * 0.5, 20);
-
-  if (state.livePrice) {
-    const y = p2y(state.livePrice);
-    if (y >= 14 && y <= candleAreaH) {
-      ctx.strokeStyle = 'rgba(255,255,255,.35)';
-      ctx.beginPath();
-      ctx.moveTo(colX, y);
-      ctx.lineTo(colEnd, y);
-      ctx.stroke();
-    }
-  }
 }
 
 function drawChart() {
@@ -1047,7 +1061,7 @@ function drawChart() {
   if (!canvas || !body) return;
 
   const width = body.clientWidth || 360;
-  const height = body.clientHeight || 192;
+  const height = body.clientHeight || 190;
   const dpr = window.devicePixelRatio || 1;
   canvas.width = Math.round(width * dpr);
   canvas.height = Math.round(height * dpr);
@@ -1055,295 +1069,90 @@ function drawChart() {
   const ctx = canvas.getContext('2d');
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = '#0b0e11';
-  ctx.fillRect(0, 0, width, height);
 
   if (!state.candles.length) {
-    ctx.fillStyle = '#4a5568';
+    ctx.fillStyle = '#0b0e11';
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = '#8b99af';
     ctx.font = '12px monospace';
     ctx.textAlign = 'center';
     ctx.fillText('Loading chart…', width / 2, height / 2);
     return;
   }
 
-  const narrow = width < 600;
-  const priceWidth = narrow ? 48 : 62;
-  const liqWidth = narrow ? 52 : 62;
-  const timeHeight = 16;
-  const volHeight = 26;
-  const chartWidth = width - priceWidth - liqWidth;
-  const liqStart = chartWidth;
-  const liqEnd = width - priceWidth;
-  const candleAreaHeight = height - timeHeight - volHeight;
+  const chartWidth = width;
+  const chartHeight = height;
+  const pad = 18;
+  const priceWidth = 48;
+  const liqWidth = 52;
+  const plotWidth = chartWidth - priceWidth - liqWidth;
+  const plotX = 0;
 
-  const slotWidth = Math.max(3, chartWidth / Math.min(state.candles.length, narrow ? 70 : 130));
-  const numVisible = Math.floor(chartWidth / slotWidth);
-  const vis = state.candles.slice(-numVisible);
-  const n = vis.length;
-  if (!n) return;
+  const allPrices = state.candles.flatMap(c => [c.h, c.l, c.o, c.c2]);
+  const maxPrice = Math.max(...allPrices);
+  const minPrice = Math.min(...allPrices);
+  const priceRange = Math.max(0.000001, maxPrice - minPrice);
 
-  let high = Math.max(...vis.map(c => c.h));
-  let low = Math.min(...vis.map(c => c.l));
-  if (state.book.bids.length && state.livePrice) {
-    [...state.book.bids, ...state.book.asks].filter(order => order.usd >= state.threshold).forEach(order => {
-      if (order.price > low * 0.995 && order.price < high * 1.005) {
-        high = Math.max(high, order.price);
-        low = Math.min(low, order.price);
-      }
-    });
-  }
-  const pad = (high - low) * 0.07 || 1;
-  high += pad;
-  low -= pad;
-  const range = high - low || 1;
-  const p2y = value => ((high - value) / range) * candleAreaHeight;
-  const maxVol = Math.max(...vis.map(c => c.v), 1);
-  const bodyW = Math.max(1, slotWidth * 0.65);
-
-  ctx.strokeStyle = '#131926';
-  ctx.lineWidth = 1;
-  for (let i = 0; i <= 4; i++) {
-    const y = (i / 4) * candleAreaHeight;
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(chartWidth, y);
-    ctx.stroke();
-  }
-
-  vis.forEach((candle, idx) => {
-    const x = idx * slotWidth + slotWidth / 2;
-    const isUp = candle.c2 >= candle.o;
-    const color = isUp ? '#1fd29a' : '#ff5b73';
-    ctx.strokeStyle = color;
-    ctx.lineWidth = Math.max(1, slotWidth * 0.09);
-    ctx.beginPath();
-    ctx.moveTo(x, p2y(candle.h));
-    ctx.lineTo(x, p2y(candle.l));
-    ctx.stroke();
-
-    const yTop = p2y(Math.max(candle.o, candle.c2));
-    const yBottom = p2y(Math.min(candle.o, candle.c2));
-    const bodyHeight = Math.max(1, yBottom - yTop);
-    if (bodyW >= 2) {
-      if (candle.live) {
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 1;
-        ctx.strokeRect(x - bodyW / 2, yTop, bodyW, bodyHeight);
-      } else {
-        ctx.fillStyle = color;
-        ctx.fillRect(x - bodyW / 2, yTop, bodyW, bodyHeight);
-      }
-    } else {
-      ctx.strokeStyle = color;
-      ctx.beginPath();
-      ctx.moveTo(x, yTop);
-      ctx.lineTo(x, yBottom);
-      ctx.stroke();
-    }
-
-    const volHeightPx = (candle.v / maxVol) * volHeight * 0.9;
-    ctx.fillStyle = isUp ? 'rgba(31,210,154,.2)' : 'rgba(255,91,115,.2)';
-    ctx.fillRect(x - bodyW / 2, height - timeHeight - volHeightPx, bodyW, volHeightPx);
-  });
-
-  const sr = calcSRLevels(state.candles);
-  sr.supports.forEach(level => {
-    const y = p2y(level.price);
-    if (y < 4 || y > candleAreaHeight) return;
-    const opacity = Math.min(1, 0.25 + level.count * 0.22);
-    ctx.fillStyle = `rgba(31,210,154,0.05)`;
-    ctx.fillRect(0, y, chartWidth, Math.min(8, candleAreaHeight - y));
-    ctx.strokeStyle = `rgba(31,210,154,${opacity})`;
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(chartWidth, y);
-    ctx.stroke();
-    ctx.fillStyle = `rgba(31,210,154,${Math.min(0.95, opacity + 0.1)})`;
-    ctx.font = `${level.count >= 3 ? 'bold ' : ''}9px monospace`;
-    ctx.textAlign = 'right';
-    ctx.fillText(`S ×${level.count}`, chartWidth - 6, y - 2);
-  });
-
-  sr.resistances.forEach(level => {
-    const y = p2y(level.price);
-    if (y < 4 || y > candleAreaHeight) return;
-    const opacity = Math.min(1, 0.25 + level.count * 0.22);
-    ctx.fillStyle = `rgba(255,91,115,0.05)`;
-    ctx.fillRect(0, Math.max(0, y - 8), chartWidth, 8);
-    ctx.strokeStyle = `rgba(255,91,115,${opacity})`;
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(chartWidth, y);
-    ctx.stroke();
-    ctx.fillStyle = `rgba(255,91,115,${Math.min(0.95, opacity + 0.1)})`;
-    ctx.font = `${level.count >= 3 ? 'bold ' : ''}9px monospace`;
-    ctx.textAlign = 'right';
-    ctx.fillText(`R ×${level.count}`, chartWidth - 6, y + 10);
-  });
-
-  if (state.book.bids.length && state.livePrice) {
-    [...state.book.bids, ...state.book.asks].forEach(order => {
-      if (order.usd < state.threshold) return;
-      const y = p2y(order.price);
-      if (y < 2 || y > candleAreaHeight + 2) return;
-      const isBid = order.price < state.livePrice;
-      const color = isBid ? 'rgba(31,210,154,.45)' : 'rgba(255,91,115,.45)';
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1;
-      ctx.setLineDash([5, 5]);
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(chartWidth, y);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      const age = getWallAge(isBid ? 'bid' : 'ask', order.price);
-      const hint = age >= 12 ? ` ⏱${age.toFixed(0)}s` : '';
-      ctx.fillStyle = color;
-      ctx.font = '7px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText(`Wall ${fmtUSD(order.usd)}${hint}`, 5, y - 3);
-    });
-  }
-
-  state.events.filter(event => event.type === 'hunted').slice(0, 8).forEach(event => {
-    const y = p2y(event.price);
-    if (y < 0 || y > candleAreaHeight) return;
-    ctx.fillStyle = 'rgba(240,178,75,.85)';
-    ctx.beginPath();
-    ctx.arc(18, y, 5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#0b0e11';
-    ctx.font = 'bold 7px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('H', 18, y + 2.5);
-  });
-
-  if (state.livePrice) {
-    const y = p2y(state.livePrice);
-    if (y >= 0 && y <= candleAreaHeight) {
-      const up = state.livePrice >= state.prevPrice;
-      ctx.strokeStyle = up ? 'rgba(31,210,154,.4)' : 'rgba(255,91,115,.4)';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([3, 4]);
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(chartWidth, y);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-  }
-
-  drawLiquidityCol(ctx, liqStart, liqEnd, candleAreaHeight, p2y);
+  const p2y = value => {
+    const ratio = (value - minPrice) / priceRange;
+    return chartHeight - pad - ratio * (chartHeight - pad * 2);
+  };
 
   ctx.fillStyle = '#0d1117';
-  ctx.fillRect(liqEnd, 0, priceWidth, height);
-  ctx.strokeStyle = '#252b36';
-  ctx.beginPath();
-  ctx.moveTo(liqEnd, 0);
-  ctx.lineTo(liqEnd, height - timeHeight);
-  ctx.stroke();
+  ctx.fillRect(0, 0, width, height);
 
-  for (let i = 0; i <= 6; i++) {
-    const price = high - ((high - low) / 6) * i;
-    const y = p2y(price);
-    if (y < 0 || y > candleAreaHeight) continue;
-    ctx.strokeStyle = '#131926';
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 5; i++) {
+    const y = (chartHeight / 5) * i;
     ctx.beginPath();
     ctx.moveTo(0, y);
     ctx.lineTo(chartWidth, y);
     ctx.stroke();
-    ctx.fillStyle = '#4a5568';
-    ctx.font = '8px monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText(fmtPriceShort(price), liqEnd + 4, y + 3);
   }
 
-  if (state.livePrice) {
-    const y = p2y(state.livePrice);
-    if (y >= 0 && y <= candleAreaHeight) {
-      const up = state.livePrice >= state.prevPrice;
-      const color = up ? '#1fd29a' : '#ff5b73';
-      ctx.fillStyle = color;
-      ctx.fillRect(liqEnd + 1, y - 8, priceWidth - 2, 16);
-      ctx.fillStyle = '#0b0e11';
-      ctx.font = 'bold 8px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText(fmtPriceShort(state.livePrice), liqEnd + 4, y + 3);
-    }
+  const candleCount = state.candles.length;
+  const slot = plotWidth / candleCount;
+
+  state.candles.forEach((candle, index) => {
+    const x = plotX + index * slot + slot * 0.2;
+    const yOpen = p2y(candle.o);
+    const yClose = p2y(candle.c2);
+    const yHigh = p2y(candle.h);
+    const yLow = p2y(candle.l);
+    const w = Math.max(2, slot * 0.5);
+    const isUp = candle.c2 >= candle.o;
+
+    ctx.strokeStyle = isUp ? '#1fd29a' : '#ff5b73';
+    ctx.beginPath();
+    ctx.moveTo(x + w / 2, yHigh);
+    ctx.lineTo(x + w / 2, yLow);
+    ctx.stroke();
+
+    ctx.fillStyle = isUp ? '#1fd29a' : '#ff5b73';
+    ctx.fillRect(x, Math.min(yOpen, yClose), w, Math.max(2, Math.abs(yOpen - yClose)));
+  });
+
+  ctx.fillStyle = '#8b99af';
+  ctx.font = '9px monospace';
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 4; i++) {
+    const value = maxPrice - (priceRange / 4) * i;
+    const y = (chartHeight / 4) * i + 10;
+    ctx.fillText(fmtPrice(value), chartWidth - 8, y);
   }
 
-  ctx.fillStyle = '#4a5568';
-  ctx.font = '8px monospace';
-  ctx.textAlign = 'center';
-  const labelEvery = Math.max(1, Math.floor(n / (narrow ? 4 : 8)));
-  vis.forEach((candle, idx) => {
-    if (idx % labelEvery !== 0) return;
-    const x = idx * slotWidth + slotWidth / 2;
-    const d = new Date(candle.t);
-    ctx.fillText(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`, x, height - 3);
-  });
-
-  const legendDefs = [
-    { col: 'rgba(31,210,154,.8)', dash: [], label: 'Support' },
-    { col: 'rgba(255,91,115,.8)', dash: [], label: 'Resistance' },
-    { col: 'rgba(31,210,154,.5)', dash: [5, 5], label: 'Bid Wall' },
-    { col: 'rgba(255,91,115,.5)', dash: [5, 5], label: 'Ask Wall' },
-    { col: 'rgba(240,178,75,.8)', dot: true, label: 'Hunted' }
-  ];
-
-  ctx.font = '8px monospace';
-  ctx.textAlign = 'left';
-  let lx = 28;
-  legendDefs.forEach(def => {
-    if (lx > chartWidth - 50) return;
-    if (def.dot) {
-      ctx.fillStyle = def.col;
-      ctx.beginPath();
-      ctx.arc(lx, height - timeHeight - volHeight - 4, 4, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = def.col;
-      ctx.fillText(def.label, lx + 7, height - timeHeight - volHeight);
-      lx += ctx.measureText(def.label).width + 20;
-    } else {
-      ctx.strokeStyle = def.col;
-      ctx.lineWidth = 1;
-      ctx.setLineDash(def.dash);
-      ctx.beginPath();
-      ctx.moveTo(lx, height - timeHeight - volHeight - 4);
-      ctx.lineTo(lx + 16, height - timeHeight - volHeight - 4);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.fillStyle = def.col;
-      ctx.fillText(def.label, lx + 18, height - timeHeight - volHeight);
-      lx += ctx.measureText(def.label).width + 34;
-    }
-  });
+  drawLiquidityCol(ctx, plotWidth + 5, plotWidth + liqWidth, chartHeight, p2y);
 }
 
 function changeInterval(newTF) {
   if (newTF === state.chartInterval) return;
   state.chartInterval = newTF;
   state.candles = [];
-  document.querySelectorAll('.tf-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tf === newTF));
-  if (state.ws && state.ws.readyState === WebSocket.OPEN) {
-    try {
-      state.ws.send(JSON.stringify({ method: 'UNSUBSCRIBE', params: [`${state.symbol}@kline_${state.chartInterval}`], id: 1 }));
-    } catch (err) {}
-  }
-  connect();
-}
-
-function bindCollapsibles() {
-  document.querySelectorAll('.mini-toggle').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const target = document.getElementById(btn.dataset.target);
-      if (!target) return;
-      const collapse = target.classList.toggle('collapsed');
-      btn.textContent = collapse ? '+' : '−';
-      btn.setAttribute('aria-label', collapse ? `Expand ${btn.dataset.target}` : `Collapse ${btn.dataset.target}`);
-      if (!collapse) target.style.display = '';
-    });
+  document.querySelectorAll('.tf-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tf === newTF);
   });
+  connect();
 }
 
 function resetUi() {
@@ -1358,12 +1167,12 @@ function resetUi() {
   state.biasReady = false;
   state.candles = [];
 
-  const lp = document.getElementById('live-price');
-  const mp = document.getElementById('mid-price');
+  const live = document.getElementById('live-price');
+  const mid = document.getElementById('mid-price');
   const arrow = document.getElementById('mid-arrow');
-  if (lp) { lp.textContent = 'Loading…'; lp.classList.remove('dn'); }
-  if (mp) { mp.textContent = 'Loading…'; mp.classList.remove('dn'); }
-  if (arrow) { arrow.textContent = '▲'; arrow.classList.remove('dn'); }
+  if (live) live.textContent = 'Connecting…';
+  if (mid) mid.textContent = '—';
+  if (arrow) arrow.textContent = '▲';
 
   const asksRows = document.getElementById('asks-rows');
   const bidsRows = document.getElementById('bids-rows');
@@ -1373,62 +1182,31 @@ function resetUi() {
   const spread = document.getElementById('spread-lbl');
   if (spread) spread.textContent = 'Spread: —';
 
-  document.getElementById('tc-up-price').textContent = 'Scanning…';
-  document.getElementById('tc-up-meta').textContent = 'Waiting';
-  document.getElementById('tc-dn-price').textContent = 'Scanning…';
-  document.getElementById('tc-dn-meta').textContent = 'Waiting';
+  const pair = document.getElementById('pair-sym');
+  if (pair) pair.textContent = formatPairText(state.symbol);
+
   document.getElementById('st-bid').textContent = '—';
   document.getElementById('st-ask').textContent = '—';
   document.getElementById('st-cvd').textContent = '—';
   document.getElementById('st-events').textContent = '0';
+  document.getElementById('entry-lbl').textContent = '⏳ WAIT';
+  document.getElementById('entry-reason').textContent = 'Accumulating data…';
   document.getElementById('bias-dir').textContent = 'WAITING…';
-  document.getElementById('bias-dir').style.color = '#6b7280';
   document.getElementById('bias-conf').textContent = '—';
-  ['ema-needle', 'raw-needle'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.left = '50%';
-  });
-  const entryLabel = document.getElementById('entry-lbl');
-  if (entryLabel) {
-    entryLabel.textContent = '⏳ WAIT';
-    entryLabel.style.color = '#6b7280';
-  }
-  const entryReason = document.getElementById('entry-reason');
-  if (entryReason) entryReason.textContent = 'Accumulating data…';
-  const entryCard = document.getElementById('entry-card');
-  if (entryCard) {
-    entryCard.style.borderColor = 'rgba(147,165,188,.18)';
-    entryCard.style.background = 'rgba(255,255,255,.015)';
-  }
-  [1, 2, 3, 4].forEach(index => {
-    const dot = document.getElementById(`ed${index}`);
-    if (dot) dot.style.background = 'rgba(255,255,255,.06)';
-  });
-  renderEvents();
+  document.getElementById('alert-scroll').innerHTML = '<div class="empty-msg">👁 Monitoring…<br>Hunt &amp; spoof events appear here.</div>';
 }
 
-document.getElementById('coin-sel').addEventListener('change', function () {
-  state.symbol = this.value;
-  document.getElementById('pair-sym').textContent = this.options[this.selectedIndex].text.replace('/', ' / ');
-  resetUi();
-  connect();
-});
-
-document.getElementById('thr-inp').addEventListener('input', function () {
-  const value = parseInt(this.value, 10);
-  if (!Number.isNaN(value) && value >= 1000) {
-    state.threshold = value;
-    state.prevWalls = { bids: {}, asks: {} };
-    state.wallTimestamps = {};
-    renderBook();
-    renderStats();
-    renderTargets();
-    renderBias();
-    drawChart();
-  }
-});
-
-document.querySelectorAll('.tf-btn').forEach(btn => btn.addEventListener('click', () => changeInterval(btn.dataset.tf)));
+function bindCollapsibles() {
+  document.querySelectorAll('.mini-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = document.getElementById(btn.dataset.target);
+      if (!target) return;
+      const collapse = target.classList.toggle('collapsed');
+      btn.textContent = collapse ? '+' : '−';
+      btn.setAttribute('aria-label', collapse ? 'Expand' : 'Collapse');
+    });
+  });
+}
 
 function onResize() {
   state.rows = IS_MOBILE() ? 10 : 14;
@@ -1437,14 +1215,48 @@ function onResize() {
 }
 
 window.addEventListener('resize', onResize);
-window.addEventListener('orientationchange', () => setTimeout(onResize, 250));
 
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && (!state.ws || state.ws.readyState !== WebSocket.OPEN)) connect();
+document.getElementById('thr-inp').addEventListener('input', function () {
+  const value = parseInt(this.value, 10);
+  if (!Number.isNaN(value) && value >= 1000) {
+    state.threshold = value;
+    renderBook();
+    renderTargets();
+    renderBias();
+  }
 });
 
+document.getElementById('coin-search').addEventListener('change', function () {
+  setSymbol(this.value);
+});
+
+document.getElementById('coin-search').addEventListener('keydown', function (event) {
+  if (event.key === 'Enter') {
+    setSymbol(this.value);
+  }
+});
+
+document.getElementById('coin-search').addEventListener('input', function () {
+  const typed = this.value.trim().toLowerCase();
+  if (!typed) return;
+  const match = USDT_SYMBOLS.find(symbol => symbol.startsWith(typed));
+  if (match) {
+    this.value = match;
+  }
+});
+
+document.querySelectorAll('.tf-btn').forEach(btn => {
+  btn.addEventListener('click', () => changeInterval(btn.dataset.tf));
+});
+
+populateCoinList();
+const coinInput = document.getElementById('coin-search');
+if (coinInput) {
+  coinInput.value = state.symbol;
+}
+document.getElementById('pair-sym').textContent = formatPairText(state.symbol);
 bindCollapsibles();
-renderEvents();
+resetUi();
 connect();
 </script>
 </body>
