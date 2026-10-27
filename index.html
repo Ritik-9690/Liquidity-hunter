@@ -78,7 +78,10 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',Courier,mo
 .orow.big .q{color:var(--amber)}
 .fire-tag{position:absolute;right:4px;font-size:9px;z-index:2;color:var(--amber);pointer-events:none;text-shadow:0 0 10px rgba(240,178,75,.3)}
 #rpanel{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;background:linear-gradient(180deg,rgba(17,24,33,.96),rgba(11,14,17,.98));border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow)}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .sec-hdr{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;font-weight:700}
+.mini-toggle{appearance:none;border:1px solid var(--border);background:rgba(255,255,255,.02);color:var(--muted);border-radius:999px;width:18px;height:18px;display:grid;place-items:center;cursor:pointer;transition:all .15s ease;padding:0;font-size:11px;line-height:1}
+.mini-toggle:hover{border-color:var(--amber);color:var(--amber)}
 #entry-sec{padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
 #entry-card{border:1px solid var(--border);border-radius:10px;padding:8px 11px;background:rgba(255,255,255,.015);transition:border-color .4s,background .4s,box-shadow .4s;box-shadow:inset 0 1px 0 rgba(255,255,255,.02)}
 .entry-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
@@ -147,6 +150,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',Courier,mo
 #chart-loading{margin-left:auto;font-size:10px;color:var(--muted-2)}
 #chart-body{flex:1;position:relative;overflow:hidden;background:linear-gradient(180deg,rgba(11,14,17,0.9),rgba(11,14,17,1))}
 #chart-cv{display:block;width:100%;height:100%}
+.panel-section.collapsed{display:none !important}
 
 /* ============ MOBILE / PHONE LAYOUT ============ */
 @media (max-width:820px){
@@ -225,8 +229,11 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',Courier,mo
     <div id="bids-wrap"><div id="bids-rows"></div></div>
   </div>
   <div id="rpanel">
-    <div id="entry-sec">
-      <div class="sec-hdr">⚡ Entry Signal</div>
+    <div id="entry-sec" class="panel-section collapsed">
+      <div class="panel-head">
+        <div class="sec-hdr">⚡ Entry Signal</div>
+        <button class="mini-toggle" data-target="entry-sec" aria-label="Toggle Entry Signal">+</button>
+      </div>
       <div id="entry-card">
         <div class="entry-top">
           <span id="entry-lbl" style="color:#6b7280">⏳ WAIT</span>
@@ -239,7 +246,10 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',Courier,mo
       </div>
     </div>
     <div id="bias-sec">
-      <div class="sec-hdr">🧭 Directional Bias <span style="color:#4a5568;font-size:9px">(bright=EMA · faint=raw)</span></div>
+      <div class="panel-head">
+        <div class="sec-hdr">🧭 Directional Bias <span style="color:#4a5568;font-size:9px">(bright=EMA · faint=raw)</span></div>
+        <button class="mini-toggle" data-target="bias-sec" aria-label="Toggle Directional Bias">−</button>
+      </div>
       <div class="gauge-row">
         <span class="gauge-lbl bear">Bear</span>
         <div id="bias-gauge"><div id="raw-needle"></div><div id="ema-needle"></div></div>
@@ -254,14 +264,21 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',Courier,mo
         <div class="bsig"><span class="bsig-ico">📈</span><span class="bsig-name">CVD (trades)</span><div class="bsig-bar-wrap"><div class="bsig-bar-fill" id="s5-bar"></div></div><span class="bsig-lbl" id="s5-lbl"></span></div>
       </div>
     </div>
-    <div id="targets-sec">
-      <div class="sec-hdr">🎯 Next Liquidity Targets</div>
+    <div id="targets-sec" class="panel-section collapsed">
+      <div class="panel-head">
+        <div class="sec-hdr">🎯 Next Liquidity Targets</div>
+        <button class="mini-toggle" data-target="targets-sec" aria-label="Toggle Targets">+</button>
+      </div>
       <div class="tgt-cards">
         <div class="tc up"><div class="tc-dir">⬆ Resistance — Sell Wall</div><div class="tc-price" id="tc-up-price">Scanning…</div><div class="tc-meta" id="tc-up-meta">Waiting</div></div>
         <div class="tc dn"><div class="tc-dir">⬇ Support — Buy Wall</div><div class="tc-price" id="tc-dn-price">Scanning…</div><div class="tc-meta" id="tc-dn-meta">Waiting</div></div>
       </div>
     </div>
-    <div id="stats-sec">
+    <div id="stats-sec" class="panel-section collapsed">
+      <div class="panel-head">
+        <div class="sec-hdr">📊 Stats</div>
+        <button class="mini-toggle" data-target="stats-sec" aria-label="Toggle Stats">+</button>
+      </div>
       <div class="sg">
         <div class="sb"><div class="sl">Bid Liq</div><div class="sv" id="st-bid" style="color:#0ecb81">—</div></div>
         <div class="sb"><div class="sl">Ask Liq</div><div class="sv" id="st-ask" style="color:#f6465d">—</div></div>
@@ -269,8 +286,11 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',Courier,mo
         <div class="sb"><div class="sl">Events</div><div class="sv" id="st-events" style="color:#f0b90b">0</div></div>
       </div>
     </div>
-    <div id="alerts-sec">
-      <div class="sec-hdr">📋 Liquidity Events</div>
+    <div id="alerts-sec" class="panel-section collapsed">
+      <div class="panel-head">
+        <div class="sec-hdr">📋 Liquidity Events</div>
+        <button class="mini-toggle" data-target="alerts-sec" aria-label="Toggle Alerts">+</button>
+      </div>
       <div id="alert-scroll"></div>
     </div>
   </div>
@@ -764,6 +784,21 @@ function fmtPriceShort(p){if(p>=1000)return(p/1000).toFixed(1)+'k';if(p>=1)retur
 function fmtQty(q){if(q>=1000)return q.toLocaleString('en-US',{maximumFractionDigits:1});if(q>=1)return q.toFixed(3);return q.toFixed(5);}
 function fmtUSD(v){if(v>=1e9)return'$'+(v/1e9).toFixed(2)+'B';if(v>=1e6)return'$'+(v/1e6).toFixed(2)+'M';if(v>=1e3)return'$'+(v/1e3).toFixed(1)+'K';return'$'+v.toFixed(0);}
 
+function bindCollapsibles(){
+  document.querySelectorAll('.mini-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = document.getElementById(btn.dataset.target);
+      if (!target) return;
+      const isCollapsed = target.classList.toggle('collapsed');
+      btn.textContent = isCollapsed ? '+' : '−';
+      btn.setAttribute('aria-label', isCollapsed ? `Expand ${btn.dataset.target}` : `Collapse ${btn.dataset.target}`);
+      if (!isCollapsed) {
+        target.style.display = '';
+      }
+    });
+  });
+}
+
 // ── CONTROLS ─────────────────────────────────────────────────────
 document.getElementById('coin-sel').addEventListener('change',function(){
   sym=this.value;
@@ -802,6 +837,7 @@ document.addEventListener('visibilitychange',()=>{
   if(!document.hidden&&(!ws||ws.readyState!==WebSocket.OPEN))connect();
 });
 
+bindCollapsibles();
 renderEvents();
 connect();
 </script>
